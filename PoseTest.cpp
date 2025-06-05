@@ -3,35 +3,52 @@
 #include <windows.h>
 #include <iostream>
 
-int frameHandler(IVisualGestureBuilderFrameReader* reader, IGesture* gestureList, int num_gestures) {
+int frameHandler(IVisualGestureBuilderFrameReader* reader, IGesture* gestureList, int num_gestures, int index) {
+    wprintf(L"FrameHandler entered %d times\n", index);
     IVisualGestureBuilderFrame *gestureFrame = nullptr;
     if(reader->CalculateAndAcquireLatestFrame(&gestureFrame) < 0) {
-        std::wcerr << L"Reader couldn't acquire latest frame\n";
+        wprintf(L"Reader couldn't acquire latest frame\n");
         return -1;
     }
+
+    wprintf(L"Frame has been captured\n");
 
     int whichGestureIndex = -1;
     IDiscreteGestureResult *result;
     for(int i = 0; i < num_gestures; i++) {
         if(gestureFrame->get_DiscreteGestureResult(&gestureList[i], &result) < 0) {
-            std::wcerr << L"Failed to read out gestures result from frame\n";
+            wprintf(L"Failed to read out gestures result from frame\n");
             return -1;
         }
         BOOLEAN detected = 0;
         float confidence = 0.0;
+
+        wprintf(L"Frame results captrued\n");
+
+
+
         if(result->get_Detected(&detected) < 0) {
-            std::wcerr << L"Failed to get gesture detection indicator\n";
+            wprintf(L"Failed to get gesture detection indicator\n");
             return -1;
         }
+        wprintf(L"End loop normally test5\n");
         if(result->get_Confidence(&confidence) < 0) {
-            std::wcerr << L"Failed to get gesture confidence indicator\n";
+            wprintf(L"Failed to get gesture confidence indicator\n");
             return -1;
         }
+        wprintf(L"End loop normally test4\n");
         if (detected == TRUE && confidence >= 0.8) {
             whichGestureIndex = i;
+
+            wprintf(L"End loop normally\n");
+
             break;
         }
+        wprintf(L"End loop normally test3\n");
+
     }
+
+    wprintf(L"All gestures has been captured\n");
 
     switch (whichGestureIndex) {
     case 0:
@@ -120,10 +137,14 @@ int main(int argc, char const *argv[])
         wprintf(L"test3\n");
     }
 
+    int index = 0;
     while(1) {
-        if (frameHandler(vgbFrameReader, gestureList, count) <= 0) {
+        wprintf(L"test123212\n");
+        if (frameHandler(vgbFrameReader, gestureList, count, index) < 0) {
+            wprintf(L"test4jhkgvjhgvuty\n");
             return -1;
         }
+        index++;
     }
     wprintf(L"vgbFrameReader has been created and gestures have been added. Test successful, shutting down program\n");
     return 0;
