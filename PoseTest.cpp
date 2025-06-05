@@ -3,11 +3,68 @@
 #include <windows.h>
 #include <iostream>
 
+int frameHandler(IVisualGestureBuilderFrameReader* reader, IGesture* gestureList, int num_gestures, int index) {
+    wprintf(L"FrameHandler entered %d times\n", index);
+    IVisualGestureBuilderFrame *gestureFrame = nullptr;
+    if(reader->CalculateAndAcquireLatestFrame(&gestureFrame) < 0) {
+        wprintf(L"Reader couldn't acquire latest frame\n");
+        return -1;
+    }
+
+    wprintf(L"Frame has been captured\n");
+
+    int whichGestureIndex = -1;
+    IDiscreteGestureResult *result;
+    for(int i = 0; i < num_gestures; i++) {
+        if(gestureFrame->get_DiscreteGestureResult(&gestureList[i], &result) < 0) {
+            wprintf(L"Failed to read out gestures result from frame\n");
+            return -1;
+        }
+        BOOLEAN detected = 0;
+        float confidence = 0.0;
+
+        wprintf(L"Frame results captrued\n");
+
+
+
+        if(result->get_Detected(&detected) < 0) {
+            wprintf(L"Failed to get gesture detection indicator\n");
+            return -1;
+        }
+        wprintf(L"End loop normally test5\n");
+        if(result->get_Confidence(&confidence) < 0) {
+            wprintf(L"Failed to get gesture confidence indicator\n");
+            return -1;
+        }
+        wprintf(L"End loop normally test4\n");
+        if (detected == TRUE && confidence >= 0.8) {
+            whichGestureIndex = i;
+
+            wprintf(L"End loop normally\n");
+
+            break;
+        }
+        wprintf(L"End loop normally test3\n");
+
+    }
+
+    wprintf(L"All gestures has been captured\n");
+
+    switch (whichGestureIndex) {
+    case 0:
+        wprintf(L"Gesture 0 detected with high confidence\n");
+        break;
+    default:
+        break;
+    }
+    return 0;
+}
+
 int main(int argc, char const *argv[])
 {
     //Simply opens the Kinect device. The first thing we need to do before we can do anything.
     IKinectSensor* kinect = nullptr;
-    hr = GetDefaultKinectSensor(&kinect);
+    HRESULT hr = GetDefaultKinectSensor(&kinect);
     if (hr < 0) {
         std::wcerr << L"GetDefaultKinectSensor failed\n";
         return -1;
@@ -24,7 +81,7 @@ int main(int argc, char const *argv[])
     /* For some reason windows C++ programs seem to always return sucess or failure
     as a HRESULT type. HRESULT is actually just a normal integer where hr < 0 means
     the function failed for some reason and hr >= 0 indicates success. */
-    HRESULT hr = CreateVisualGestureBuilderDatabaseInstanceFromFile(databasePath, &vgbDB);
+    hr = CreateVisualGestureBuilderDatabaseInstanceFromFile(databasePath, &vgbDB);
     if (hr < 0) {
         std::wcerr << L"CreateVisualGestureBuilderDatabaseInstanceFromFile failed\n";
         return -1;
@@ -66,14 +123,29 @@ int main(int argc, char const *argv[])
         std::wcerr << L"Couldn't get list of gestures\n";
         return -1;
     }
+    wprintf(L"Count is %d\n", count);
     for (UINT i = 0; i < count; ++i) {
+        wprintf(L"test1\n");
         hr = vgbFrameSource->AddGesture(&gestureList[i]);
+        wprintf(L"test2\n");
         if (hr < 0) {
             std::wcerr << L"Adding gesture fro VGB Frame Soucre failed\n";
             return -1;
+        } else {
+            wprintf(L"Succesfully added a gesture\n");
         }
+        wprintf(L"test3\n");
     }
 
+    int index = 0;
+    while(1) {
+        wprintf(L"test123212\n");
+        if (frameHandler(vgbFrameReader, gestureList, count, index) < 0) {
+            wprintf(L"test4jhkgvjhgvuty\n");
+            return -1;
+        }
+        index++;
+    }
     wprintf(L"vgbFrameReader has been created and gestures have been added. Test successful, shutting down program\n");
     return 0;
 }
